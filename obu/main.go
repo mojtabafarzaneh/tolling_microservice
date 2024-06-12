@@ -1,10 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/mojtabafarzaneh/tolling/types"
 )
 
 //trying to simulate an on board unit that sends out GPS coordinance to each entervallue
@@ -12,11 +15,7 @@ import (
 
 var sendInterVall = time.Second
 
-type ObuData struct {
-	OBUID int     `json:"obuID"`
-	Lat   float64 `json:"lat"`
-	Long  float64 `json:"long"`
-}
+const wsEndPoint = "ws://127.0.0.1:30000/ws"
 
 func genCoord() float64 {
 	n := float64(rand.Intn(100) + 1)
@@ -38,15 +37,21 @@ func genObuIDs(n int) []int {
 }
 func main() {
 	obIDs := genObuIDs(20)
+	conn, _, err := websocket.DefaultDialer.Dial(wsEndPoint, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 	for {
 		for i := 0; i < len(obIDs); i++ {
 			lat, long := genLocation()
-			data := ObuData{
+			data := types.ObuData{
 				OBUID: obIDs[i],
 				Lat:   lat,
 				Long:  long,
 			}
-			fmt.Printf("%+v\n", data)
+			if err := conn.WriteJSON(data); err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		time.Sleep(sendInterVall)
