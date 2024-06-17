@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,19 +14,28 @@ import (
 type DataReceiver struct {
 	msgch chan types.ObuData
 	conn  *websocket.Conn
+	prod *kafka.Producer
 }
 
-const kafkaTopic = "obudata"
+var  kafkaTopic = "obudata"
 
 func main() {
+	recv, err := NewDataReceiver()
+	if err != nil {
+		log.Fatal(err)
+	}
+	http.HandleFunc("/ws", recv.handleWS)
+	http.ListenAndServe(":30000", nil)
 	
+}
+
+func NewDataReceiver() (*DataReceiver, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost"})
 	if err != nil {
 		panic(err)
 	}
-	
-	defer p.Close()
-	
+
+		
 	// Delivery report handler for produced messages
 	go func() {
 		for e := range p.Events() {
@@ -40,26 +50,31 @@ func main() {
 			}
 			}()
 
-			// Produce messages to topic (asynchronously)
-			topic := "myTopic"
-			p.Produce(&kafka.Message{
-				TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          []byte("test producing"),
-			}, nil)
-			return 
 
-			
-	recv := NewDataReceiver()
-	http.HandleFunc("/ws", recv.handleWS)
-	http.ListenAndServe(":30000", nil)
-	
-}
-
-func NewDataReceiver() *DataReceiver {
 	return &DataReceiver{
 		msgch: make(chan types.ObuData, 128),
-	}
+		prod: p,
+	}, nil
 }
+
+func (dr *DataReceiver) ProduceData(data types.ObuData) error {
+	b, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	
+
+	err = dr.prod.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{
+			Topic: &kafkaTopic, 
+			Partition: kafka.PartitionAny,
+		},
+			Value: b,
+			}, nil)
+
+	return err
+}
+
 
 func (dr *DataReceiver) handleWS(w http.ResponseWriter, r *http.Request) {
 	u := websocket.Upgrader{
@@ -84,8 +99,8 @@ func (dr *DataReceiver) wsReceiverLoop() {
 			log.Println("read error:", err)
 			continue
 		}
-		fmt.Printf("received OBU data [%d] :: <lat %.2f, long %.2f> \n", data.OBUID, data.Lat, data.Long)
-		dr.msgch <- data
-
+		if err := dr.ProduceData(data); err != nil{
+			log.Println("kafka produce error: ", err)
+		}
 	}
 }
