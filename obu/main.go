@@ -14,7 +14,7 @@ import (
 //trying to simulate an on board unit that sends out GPS coordinance to each entervallue
 //we are going to use websocket to sends the coordinance from this board to our first microservice
 
-var sendInterVall = time.Second
+var sendInterVall = time.Second * 6
 
 const wsEndPoint = "ws://127.0.0.1:30000/ws"
 
@@ -53,10 +53,10 @@ func main() {
 			if err := conn.WriteJSON(data); err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("data %T has been sent\n", data)
 		}
 
 		time.Sleep(sendInterVall)
+		fmt.Printf("%d data has been sent\n", len(obIDs))
 	}
 }
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/mojtabafarzaneh/tolling/types"
@@ -51,12 +50,11 @@ func (c *KafkaConsumer) ReadMessageLoop() {
 			logrus.Errorf("JSON Unmarshal error %s", err)
 			continue
 		}
-		distance, err := c.calservice.CalculateDistance(data)
+		_, err = c.calservice.CalculateDistance(data)
 		if err != nil {
 			logrus.Errorf("distance calculator error %s", err)
 			continue
 		}
-		fmt.Printf("distance %.2f\n", distance)
 
 	}
 
