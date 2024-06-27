@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/mojtabafarzaneh/tolling/types"
@@ -13,26 +12,20 @@ type CalculateServicer interface {
 }
 
 type CalService struct {
-	points [][]float64
+	prevPoint []float64
 }
 
 func NewCalService() CalculateServicer {
-	return &CalService{
-		points: make([][]float64, 0),
-	}
+	return &CalService{}
 }
 
 func (s *CalService) CalculateDistance(data types.ObuData) (float64, error) {
 	distance := 0.0
-	s.points = append(s.points, []float64{data.Lat, data.Long})
 
-	if len(s.points) > 0 {
-		prevPoints := s.points[len(s.points)-1]
-		fmt.Println(prevPoints)
-		distance = calculateDistance(prevPoints[0], prevPoints[1], data.Lat, data.Long)
-		fmt.Println(data.Lat, data.Long)
+	if len(s.prevPoint) > 0 {
+		distance = calculateDistance(s.prevPoint[0], s.prevPoint[1], data.Lat, data.Long)
 	}
-	fmt.Println("calculating the distance")
+	s.prevPoint = []float64{data.Lat, data.Long}
 	return distance, nil
 
 }
