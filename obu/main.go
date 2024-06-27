@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"math/rand"
@@ -52,6 +53,7 @@ func main() {
 			if err := conn.WriteJSON(data); err != nil {
 				log.Fatal(err)
 			}
+			fmt.Printf("data %T has been sent\n", data)
 		}
 
 		time.Sleep(sendInterVall)
