@@ -1,5 +1,5 @@
 obu:
-	@go build -o bin/obu obu/main.go 
+	@go build -o bin/obu ./obu
 	@./bin/obu
 receiver:
 	@go build -o bin/receiver ./data_receiver
@@ -12,4 +12,4 @@ calculator:
 aggregator:
 	@go build -o bin/agg ./aggregator
 	@./bin/agg
-.PHONY:obu, aggregator
+.PHONY: obu aggregator
