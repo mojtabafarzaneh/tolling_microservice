@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/mojtabafarzaneh/tolling/types"
 )
@@ -33,8 +34,29 @@ func AggregateDistance(svc Aggregator) {
 func makeHttpTransport(listenAdder string, svc Aggregator) {
 	fmt.Println("http transport running on the port", listenAdder)
 	http.HandleFunc("/aggregate", handleaggregate(svc))
+	http.HandleFunc("/invoice", handleIGetInvoice(svc))
 	http.ListenAndServe(listenAdder, nil)
 
+}
+func handleIGetInvoice(svc Aggregator) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		value, ok := r.URL.Query()["obu"]
+		if !ok {
+			writeJSON(rw, http.StatusBadRequest, map[string]string{"error": "obu id is missing"})
+			return
+		}
+		obuID, err := strconv.Atoi(value[0])
+		if err != nil {
+			writeJSON(rw, http.StatusBadRequest, map[string]string{"error": "invalid obuid"})
+			return
+		}
+		invoice, err := svc.CalculateInvoice(obuID)
+		if err != nil {
+			writeJSON(rw, http.StatusBadRequest, map[string]string{"error": err.Error()})
+
+		}
+		writeJSON(rw, http.StatusOK, invoice)
+	}
 }
 
 func handleaggregate(svc Aggregator) http.HandlerFunc {
