@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 
 	"github.com/mojtabafarzaneh/tolling/types"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	listenAdder := flag.String("listenAdder", ":3000", "the listen adder of the http server")
+	httpListenAdder := flag.String("httplistenAdder", ":3000", "the listen adder of the http server")
+	grpcListenAdder := flag.String("grpclistenAdder", ":5000", "the listen adder of the grpc server")
 	flag.Parse()
 
 	var (
@@ -19,8 +22,8 @@ func main() {
 		svc   = NewInvoiceAggregator(store)
 	)
 	svc = NewLogMiddleware(svc)
-
-	makeHttpTransport(*listenAdder, svc)
+	go makeGRPCTransport(*grpcListenAdder, svc)
+	makeHttpTransport(*httpListenAdder, svc)
 }
 
 func DistanceAgg(svc Aggregator) {
@@ -29,6 +32,19 @@ func DistanceAgg(svc Aggregator) {
 
 func AggregateDistance(svc Aggregator) {
 	panic("unimplemented")
+}
+
+func makeGRPCTransport(listenAdder string, svc Aggregator) error {
+	fmt.Println("grpc transport runnig on port ", listenAdder)
+	ln, err := net.Listen("TCP", listenAdder)
+	if err != nil {
+		return err
+	}
+
+	server := grpc.NewServer([]grpc.ServerOption{}...)
+	types.RegisterAggregatorServer(server, NewGRPCServer(svc))
+
+	return server.Serve(ln)
 }
 
 func makeHttpTransport(listenAdder string, svc Aggregator) {
