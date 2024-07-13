@@ -10,6 +10,6 @@ scrape_configs:
   scheme: http 
   follow_redirects: true
   static_configs:
-  - targets: ['172.24.78.105:3000']
+  - targets: ['172.24.78.105:4000']
   
   

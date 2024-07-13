@@ -5,6 +5,7 @@ go 1.22.4
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.4.0
 	github.com/gorilla/websocket v1.5.2
+	github.com/joho/godotenv v1.5.1
 	google.golang.org/grpc v1.62.1
 	google.golang.org/protobuf v1.33.0
 )
