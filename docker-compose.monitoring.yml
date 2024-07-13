@@ -26,7 +26,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin123
 
     ports:
-      - '3000:3000'
+      - "6402:3000"
 
 volumes:
   prometheus_data:
